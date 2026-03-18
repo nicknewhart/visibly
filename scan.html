@@ -1107,8 +1107,8 @@
           <span class="tab-count" id="tab-issues-count">0</span>
         </button>
         <button class="tab" id="tab-btn-suggestions">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="10" y="3" width="6" height="6" rx="1"/><rect x="2" y="11" width="6" height="6" rx="1"/><rect x="10" y="11" width="6" height="6" rx="1"/></svg>
-          Palette alternatives
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/></svg>
+          Color fixes
         </button>
         <button class="tab" id="tab-grayscale-btn">
           <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z"/></svg>
@@ -1143,11 +1143,11 @@
       <div id="tab-suggestions" style="display:none;">
         <div class="issues-section">
           <div class="issues-section-header">
-            <h3>Palette alternatives</h3>
-            <span class="issue-count">Click to preview</span>
+            <h3>Color fixes</h3>
+            <span class="issue-count">Same hue, better contrast</span>
           </div>
           <div style="padding:16px;">
-            <p style="font-size:12px;color:var(--gray-500);margin-bottom:14px;line-height:1.6;">Full palette alternatives that close all the perceptual gaps at once. Click any to see it applied to a real layout.</p>
+            <p style="font-size:12px;color:var(--gray-500);margin-bottom:14px;line-height:1.6;">These are better versions of the colors you already chose — same hue, adjusted for contrast and perceptual clarity. Your brand stays intact.</p>
             <div class="suggestions-grid" id="suggestions-list"></div>
             <div id="palette-preview">
               <div class="palette-preview-label" id="preview-label">Previewing palette</div>
@@ -1288,11 +1288,12 @@ Return ONLY a valid JSON object with no markdown, no explanation, no backticks.
       "colors": ["#hex1", "#hex2"]
     }
   ],
-  "suggestions": [
+  "fixes": [
     {
-      "name": "<palette name>",
-      "description": "<1 sentence on how this closes the perceptual gap>",
-      "colors": ["#hex1", "#hex2", "#hex3", "#hex4"]
+      "role": "<what this color is used for in the design, e.g. 'Primary action', 'Error state', 'Success badge', 'Accent text'>",
+      "original": "<the exact hex color the designer used, sampled from the image>",
+      "fixed": "<a better version of the SAME color — same hue family, adjusted lightness/saturation/contrast to fix the perceptual gap. NEVER change the hue dramatically. If they used blue, give a better blue. If they used green, give a better green.>",
+      "reason": "<1 short sentence on why the fix works — e.g. 'Darker value creates contrast that reads for all users'>"
     }
   ],
   "grayscale": {
@@ -1304,7 +1305,7 @@ Return ONLY a valid JSON object with no markdown, no explanation, no backticks.
     "gray_equivalents": ["<the grayscale/luminance equivalent hex for each above, e.g. #8a8a8a>"]
   }
 }
-Rules: Up to 6 issues. Exactly 4 palette suggestions. The grayscale section is REQUIRED — always include original_colors and gray_equivalents with real hex values sampled from the image. Return ONLY valid JSON, no markdown, no backticks.`;
+Rules: Up to 6 issues. The fixes array should have one entry per problematic color found — same hue family always, just better value/contrast. The grayscale section is REQUIRED — always include original_colors and gray_equivalents with real hex values sampled from the image. Return ONLY valid JSON, no markdown, no backticks.`;
 
   const printPrompt = `You are an expert print design advisor helping colorblind designers understand how their print work is perceived by most users. Analyze the perceptual gap including CMYK color shift and grayscale collapse.
 
@@ -1460,20 +1461,43 @@ function renderResults(data) {
     issuesList.innerHTML += `<div class="fix-item" id="fix-${idx}"><div class="fix-checkbox" onclick="toggleFix(this)" title="Mark as fixed"></div><div style="flex:1;min-width:0;"><div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span class="fix-priority" style="background:${sevColor};color:${sevTextColor};">${sevLabel}</span><span style="font-size:10px;color:var(--gray-400);">${impactNote}</span></div><div class="fix-title">${issue.title}</div><div class="fix-desc">${issue.description}</div>${issue.gap ? `<div class="fix-gap"><strong>You see:</strong> ${issue.gap}</div>` : ''}${swapHtml}</div></div>`;
   });
 
+  // Color fixes — same hue, better contrast
   const sugList = document.getElementById('suggestions-list');
   sugList.innerHTML = '';
-  (data.suggestions || []).forEach(s => {
-    const swatches = (s.colors || []).map(c => `<div class="palette-swatch" style="background:${c}" title="${c}"></div>`).join('');
-    const card = document.createElement('div');
-    card.className = 'suggestion-card';
-    card.innerHTML = `<div class="suggestion-card-title">${s.name}</div><div class="palette-row">${swatches}</div><div class="suggestion-meta">${s.description}</div>`;
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.suggestion-card').forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
-      renderPalettePreview(s);
+  const fixes = data.fixes || data.suggestions || [];
+
+  if (fixes.length === 0) {
+    sugList.innerHTML = `<div style="padding:24px;text-align:center;font-size:13px;color:var(--gray-500);">No color fixes needed — your palette is reading well.</div>`;
+  } else {
+    fixes.forEach(f => {
+      const original = f.original || (f.colors && f.colors[0]) || '#888';
+      const fixed = f.fixed || (f.colors && f.colors[1]) || '#444';
+      const role = f.role || f.name || 'Color';
+      const reason = f.reason || f.description || '';
+
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:14px 0;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:14px;';
+      row.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:36px;height:36px;border-radius:8px;background:${original};border:1px solid rgba(0,0,0,0.08);"></div>
+            <div style="font-size:9px;font-family:monospace;color:var(--gray-400);">${original}</div>
+          </div>
+          <svg width="14" height="14" fill="none" stroke="var(--gray-400)" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:36px;height:36px;border-radius:8px;background:${fixed};border:1px solid rgba(0,0,0,0.08);"></div>
+            <div style="font-size:9px;font-family:monospace;color:var(--gray-400);">${fixed}</div>
+          </div>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:600;color:var(--black);margin-bottom:3px;">${role}</div>
+          <div style="font-size:11px;color:var(--gray-500);line-height:1.5;">${reason}</div>
+        </div>
+        <button onclick="navigator.clipboard.writeText('${fixed}').then(()=>{this.textContent='Copied!';setTimeout(()=>this.textContent='Copy',2000)})" style="font-size:11px;font-weight:500;color:var(--teal-dark);background:var(--teal-light);border:none;border-radius:6px;padding:5px 10px;cursor:pointer;font-family:var(--font-body);flex-shrink:0;">Copy</button>`;
+
+      sugList.appendChild(row);
     });
-    sugList.appendChild(card);
-  });
+  }
 
   renderGrayscale(data.grayscale || {});
   switchTab('fixes', document.querySelector('.tab'));
@@ -1557,7 +1581,7 @@ function renderGrayscale(g) {
   }
 }
 
-function renderPalettePreview(s) {
+function renderPalettePreview(s, targetId) {
   const colors = s.colors || [];
   const sorted = [...colors].sort((a,b) => getLuminance(a)-getLuminance(b));
   const dark = sorted[0] || '#0F1117';
@@ -1569,9 +1593,8 @@ function renderPalettePreview(s) {
   const accentText = bestText(accent);
   const badgeBg = lighten(accent, 0.88);
 
-  document.getElementById('preview-label').textContent = `Previewing: ${s.name}`;
-  document.getElementById('mockup-render').innerHTML = `
-    <div style="font-family:'DM Sans',sans-serif;background:${bg};border-radius:0 0 14px 14px;overflow:hidden;">
+  const mockupHTML = `
+    <div style="font-family:'DM Sans',sans-serif;background:${bg};overflow:hidden;">
       <div style="background:${navBg};border-bottom:1px solid rgba(0,0,0,0.07);padding:0 24px;height:48px;display:flex;align-items:center;justify-content:space-between;">
         <div style="display:flex;align-items:center;gap:6px;">
           <div style="width:18px;height:18px;border-radius:3px;background:${accent};"></div>
@@ -1605,9 +1628,14 @@ function renderPalettePreview(s) {
       </div>
     </div>`;
 
-  const preview = document.getElementById('palette-preview');
-  preview.style.display = 'block';
-  preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  const container = document.getElementById(targetId || 'mockup-render');
+  if (container) container.innerHTML = mockupHTML;
+
+  if (!targetId) {
+    if (document.getElementById('preview-label')) document.getElementById('preview-label').textContent = `Previewing: ${s.name}`;
+    const preview = document.getElementById('palette-preview');
+    if (preview) { preview.style.display = 'block'; preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+  }
 }
 
 function previewDemoResults() {
@@ -1643,11 +1671,11 @@ function previewDemoResults() {
         colors: ["#22C55E", "#F9FAFB"]
       }
     ],
-    suggestions: [
-      { name: "High contrast intent", description: "Amplifies the perceptual differences that may be subtle in your current palette.", colors: ["#0D9488", "#DC2626", "#1D4ED8", "#F59E0B"] },
-      { name: "Shape + color system", description: "Pairs distinct hues with high luminance contrast so meaning survives colorblind simulation.", colors: ["#0F766E", "#B91C1C", "#1E40AF", "#D97706"] },
-      { name: "Warm-cool separation", description: "Uses temperature contrast rather than hue alone, which reads clearly across all vision types.", colors: ["#0D9488", "#EA580C", "#1D4ED8", "#7C3AED"] },
-      { name: "Accessible minimal", description: "A tight palette where every color is maximally distinct for the broadest range of users.", colors: ["#0F766E", "#1D4ED8", "#92400E", "#374151"] }
+    fixes: [
+      { role: "Primary action button", original: "#4F46E5", fixed: "#3730A3", reason: "Darker value of the same indigo — higher contrast against white, reads clearly for all vision types." },
+      { role: "Error state", original: "#C0392B", fixed: "#991B1B", reason: "Deeper red in the same hue family — more luminance contrast so it reads as urgent even for protanopia users." },
+      { role: "Success badge", original: "#22C55E", fixed: "#15803D", reason: "Darker green maintains the same hue but adds enough contrast to stand out against light surfaces." },
+      { role: "Pending badge", original: "#F0E6FF", fixed: "#7C3AED", reason: "The light lavender background needs a much deeper purple to carry meaning — same hue, far better contrast." }
     ],
     grayscale: {
       summary: "Your design loses significant meaning in grayscale. Two of your key status colors collapse to nearly identical gray values, which would make them indistinguishable in print or B&W contexts.",
@@ -1777,8 +1805,71 @@ function selectSimType(s, activeBtn) {
     : `<div style="height:240px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-size:12px;">Upload a design to see simulation</div>`;
 }
 
+let allSuggestions = [];
+
+function closePaletteOverlay() {
+  document.getElementById('palette-overlay').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function openPaletteOverlay(selected, all) {
+  allSuggestions = all;
+  document.getElementById('palette-overlay').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+
+  // Build switcher buttons
+  const btnContainer = document.getElementById('palette-type-btns');
+  btnContainer.innerHTML = '';
+  all.forEach(s => {
+    const btn = document.createElement('button');
+    btn.style.cssText = `display:flex;align-items:center;gap:7px;padding:7px 14px;border-radius:99px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);transition:all 0.15s;white-space:nowrap;`;
+    const dot = s.colors[0] || '#0D9488';
+    btn.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${dot};display:inline-block;flex-shrink:0;"></span>${s.name}`;
+    btn.addEventListener('click', () => selectPalette(s, btn));
+    btnContainer.appendChild(btn);
+  });
+
+  // Select the clicked one
+  const targetBtn = btnContainer.children[all.indexOf(selected)];
+  selectPalette(selected, targetBtn);
+}
+
+function selectPalette(s, activeBtn) {
+  // Update button states
+  document.querySelectorAll('#palette-type-btns button').forEach(b => {
+    b.style.background = 'rgba(255,255,255,0.07)';
+    b.style.color = 'rgba(255,255,255,0.6)';
+    b.style.borderColor = 'rgba(255,255,255,0.15)';
+  });
+  const dot = s.colors[0] || '#0D9488';
+  activeBtn.style.background = dot;
+  activeBtn.style.color = 'white';
+  activeBtn.style.borderColor = dot;
+
+  // Update name and description
+  document.getElementById('palette-overlay-name').textContent = s.name;
+  document.getElementById('palette-overlay-desc').textContent = s.description;
+
+  // Update swatches row
+  document.getElementById('palette-overlay-swatches').innerHTML = (s.colors || []).map(c =>
+    `<div style="width:32px;height:32px;border-radius:8px;background:${c};border:1px solid rgba(255,255,255,0.1);position:relative;" title="${c}">
+      <div style="position:absolute;bottom:-16px;left:50%;transform:translateX(-50%);font-size:8px;color:rgba(255,255,255,0.4);font-family:monospace;white-space:nowrap;">${c}</div>
+    </div>`
+  ).join('');
+
+  // Render mockup
+  document.getElementById('palette-overlay-mockup').innerHTML = '';
+  renderPalettePreview(s, 'palette-overlay-mockup');
+}
+
 document.getElementById('sim-see-all-btn').addEventListener('click', openSimOverlay);
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimOverlay(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeSimOverlay();
+    closePaletteOverlay();
+  }
+});
+
 </script>
 <!-- COLORBLIND SVG FILTERS -->
 <svg width="0" height="0" style="position:absolute;overflow:hidden;">
@@ -1836,6 +1927,31 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimOver
     <!-- INSIGHT NOTE -->
     <div id="sim-insight" style="margin-top:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 16px;font-size:12px;color:rgba(255,255,255,0.5);line-height:1.6;"></div>
 
+  </div>
+</div>
+
+<!-- PALETTE PREVIEW OVERLAY -->
+<div id="palette-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,15,14,0.94);z-index:9999;overflow-y:auto;padding:32px 24px;" onclick="if(event.target===this)closePaletteOverlay()">
+  <div style="max-width:780px;margin:0 auto;">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;gap:16px;">
+      <div>
+        <div style="font-family:'Lora',serif;font-size:20px;font-weight:600;color:white;margin-bottom:4px;">Palette preview</div>
+        <div id="palette-overlay-desc" style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;"></div>
+      </div>
+      <button onclick="closePaletteOverlay()" style="flex-shrink:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:99px;padding:8px 20px;font-size:13px;font-weight:500;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;">Close ✕</button>
+    </div>
+
+    <!-- PALETTE SWATCHES ROW -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;align-items:center;">
+      <div id="palette-overlay-swatches" style="display:flex;gap:6px;"></div>
+      <div id="palette-overlay-name" style="font-size:13px;font-weight:600;color:white;margin-left:8px;"></div>
+    </div>
+
+    <!-- SWITCHER BUTTONS -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;" id="palette-type-btns"></div>
+
+    <!-- MOCKUP -->
+    <div style="border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);" id="palette-overlay-mockup"></div>
   </div>
 </div>
 
