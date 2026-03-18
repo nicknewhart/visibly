@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Visibly — Scan your design</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --teal: #0D9488;
+    --teal-light: #CCFBF1;
+    --teal-mid: #14B8A6;
+    --teal-dark: #0F766E;
+    --black: #0F1117;
+    --gray-900: #1a1d23;
+    --gray-700: #374151;
+    --gray-600: #4B5563;
+    --gray-500: #6B7280;
+    --gray-400: #9CA3AF;
+    --gray-300: #D1D5DB;
+    --gray-200: #E5E7EB;
+    --gray-100: #F3F4F6;
+    --gray-50: #F9FAFB;
+    --white: #ffffff;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --font-display: 'Lora', serif;
+    --font-body: 'DM Sans', sans-serif;
+    --panel-left: 300px;
+  }
+
+  html, body { height: 100%; overflow: hidden; }
+
+  body {
+    font-family: var(--font-body);
+    /* Soft teal-aqua gradient — same feel as Systemly's blue-lavender but in Visibly's teal */
+    background:
+      radial-gradient(ellipse 80% 60% at 15% 20%, rgba(13,148,136,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 70% 50% at 88% 85%, rgba(13,148,136,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 85% 5%, rgba(20,184,166,0.05) 0%, transparent 55%),
+      #edf7f6;
+    color: var(--black);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    border-bottom: 1px solid rgba(13,148,136,0.12);
+    background: var(--white);
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--black);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+
+  .logo-icon {
+    width: 24px;
+    height: 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+  }
+
+  .logo-icon span { border-radius: 3px; display: block; }
+  .logo-icon span:nth-child(1) { background: #0D9488; }
+  .logo-icon span:nth-child(2) { background: #8DB347; }
+  .logo-icon span:nth-child(3) { background: #A0522D; }
+  .logo-icon span:nth-child(4) { background: #4A7FB5; }
+
+  .nav-center {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--gray-100);
+    border-radius: 99px;
+    padding: 3px;
+  }
+
+  .mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-500);
+    border-radius: 99px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: var(--font-body);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+
+  .mode-btn.active {
+    background: var(--white);
+    color: var(--black);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .nav-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-back {
+    font-size: 13px;
+    color: var(--gray-500);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color 0.15s;
+  }
+
+  .nav-back:hover { color: var(--black); }
+
+  /* CANVAS WRAPPER */
+  .canvas-wrapper {
+    flex: 1;
+    overflow: hidden;
+    padding: 16px 20px 20px;
+    display: flex;
+    gap: 16px;
+    min-height: 0;
+  }
+
+  /* CANVAS — just a flex row container */
+  .canvas {
+    display: contents;
+  }
+
+  /* LEFT PANEL — frosted glass card */
+  .panel-left {
+    width: var(--panel-left);
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 2px 16px rgba(13,148,136,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .panel-section {
+    padding: 20px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+  }
+
+  .panel-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--gray-500);
+    margin-bottom: 12px;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    border: 1.5px dashed var(--gray-300);
+    border-radius: var(--radius-lg);
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    background: rgba(255,255,255,0.5);
+    position: relative;
+  }
+
+  .upload-zone:hover, .upload-zone.dragover {
+    border-color: var(--teal);
+    background: #f0fdf9;
+  }
+
+  .upload-zone input[type=file] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+  }
+
+  .upload-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 10px;
+    color: var(--teal);
+  }
+
+  .upload-zone h3 { font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 4px; }
+  .upload-zone p { font-size: 11px; color: var(--gray-400); }
+  .upload-zone p span { color: var(--teal); font-weight: 500; }
+
+  /* PREVIEW */
+  #preview-container { display: none; }
+
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .preview-filename {
+    font-size: 12px;
+    color: var(--gray-600);
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+
+  .preview-img-wrap {
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+    margin-bottom: 12px;
+  }
+
+  .preview-img-wrap img {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* SCAN BTN */
+  #scan-btn {
+    display: none;
+    width: 100%;
+    padding: 11px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 99px;
+    background: var(--teal);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-body);
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  #scan-btn:hover { background: var(--teal-dark); }
+  #scan-btn:active { transform: scale(0.98); }
+
+  .btn-ghost {
+    width: 100%;
+    padding: 8px;
+    font-size: 12px;
+    color: var(--gray-500);
+    background: none;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    font-family: var(--font-body);
+    transition: all 0.15s;
+    margin-top: 8px;
+  }
+
+  .btn-ghost:hover { color: var(--black); border-color: var(--gray-400); }
+
+  /* COLORBLIND TYPE SELECTOR */
+  .type-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .type-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 10px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s;
+    background: rgba(255,255,255,0.5);
+  }
+
+  .type-chip.active {
+    border-color: var(--teal);
+    background: var(--teal-light);
+    color: var(--teal-dark);
+  }
+
+  .type-chip-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* RIGHT PANEL */
+  /* RIGHT PANEL — frosted glass card */
+  .panel-right {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: rgba(255,255,255,0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: var(--radius-xl);
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 2px 16px rgba(13,148,136,0.07), inset 0 1px 0 rgba(255,255,255,0.9);
+    min-height: 0;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 40px;
+    color: var(--gray-400);
+  }
+
+  .empty-icon {
+    width: 64px;
+    height: 64px;
+    border: 1.5px dashed var(--gray-300);
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 16px;
+    color: var(--gray-300);
+  }
+
+  .empty-state h3 { font-size: 15px; font-weight: 500; color: var(--gray-500); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; color: var(--gray-400); line-height: 1.6; max-width: 280px; }
+
+  /* LOADING */
+  #loading-state {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px;
+  }
+
+  .loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--gray-100);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--black); font-weight: 500; margin-bottom: 4px; }
+  .loading-sub { font-size: 12px; color: var(--gray-400); }
+
+  /* ERROR */
+  #error-state {
+    display: none;
+    background: #fff5f5;
+    border: 1px solid #fed7d7;
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    color: #c53030;
+    font-size: 13px;
+  }
+
+  /* RESULTS */
+  #results-section { display: none; }
+
+  .results-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  .results-topbar h2 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  /* SCORE GRID */
+  .score-grid {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 12px;
+  }
+
+  .score-main {
+    background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-xl);
+    padding: 20px 16px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .score-ring { position: relative; width: 80px; height: 80px; margin-bottom: 8px; }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-number {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 600; color: var(--black);
+  }
+
+  .score-label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500; }
+
+  .score-breakdown {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .score-type-card {
+    background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .score-type-name { font-size: 12px; font-weight: 500; color: var(--black); margin-bottom: 2px; }
+  .score-type-sub { font-size: 10px; color: var(--gray-400); }
+  .score-type-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 99px; white-space: nowrap; }
+  .badge-pass { background: #d1fae5; color: #065f46; }
+  .badge-warn { background: #fef9c3; color: #854d0e; }
+  .badge-fail { background: #fee2e2; color: #991b1b; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(255,255,255,0.8);
+    border-radius: 99px;
+    padding: 3px;
+    width: fit-content;
+  }
+
+  .tab {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--gray-500);
+    border-radius: 99px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    font-family: var(--font-body);
+    transition: all 0.15s;
+  }
+
+  .tab.active { background: var(--white); color: var(--black); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+  /* ISSUES */
+  .issues-section {
+    background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+  }
+
+  .issues-section-header {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(240,253,250,0.7);
+  }
+
+  .issues-section-header h3 { font-size: 13px; font-weight: 600; color: var(--black); }
+
+  .issue-count {
+    font-size: 11px; color: var(--gray-500);
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-radius: 99px; padding: 2px 8px;
+  }
+
+  .issue-item {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--gray-100);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: start;
+  }
+
+  .issue-item:last-child { border-bottom: none; }
+
+  .issue-severity {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; font-weight: 600; padding: 2px 8px;
+    border-radius: 99px; margin-bottom: 5px; letter-spacing: 0.02em;
+  }
+
+  .sev-high { background: #fee2e2; color: #991b1b; }
+  .sev-med { background: #fef9c3; color: #854d0e; }
+  .sev-low { background: #dbeafe; color: #1e40af; }
+
+  .issue-title { font-size: 13px; font-weight: 500; color: var(--black); margin-bottom: 4px; }
+  .issue-desc { font-size: 12px; color: var(--gray-500); line-height: 1.5; }
+  .issue-gap {
+    margin-top: 6px; font-size: 11px; color: var(--teal-dark);
+    background: var(--teal-light); border-radius: 6px;
+    padding: 5px 9px; display: inline-block; line-height: 1.5;
+  }
+
+  .color-swatches { display: flex; gap: 5px; align-items: center; }
+  .swatch { width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.08); flex-shrink: 0; }
+  .swatch-arrow { font-size: 11px; color: var(--gray-400); }
+
+  /* SUGGESTIONS */
+  .suggestions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .suggestion-card {
+    background: rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.9);
+    border-radius: var(--radius-lg);
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .suggestion-card:hover { border-color: var(--teal); }
+  .suggestion-card.active { border-color: var(--teal); border-width: 2px; }
+
+  .suggestion-card-title { font-size: 12px; font-weight: 500; color: var(--black); margin-bottom: 8px; }
+
+  .palette-row { display: flex; gap: 4px; margin-bottom: 6px; }
+  .palette-swatch { height: 20px; flex: 1; border-radius: 4px; border: 1px solid rgba(0,0,0,0.06); }
+  .suggestion-meta { font-size: 11px; color: var(--gray-500); line-height: 1.4; }
+
+  /* PALETTE PREVIEW */
+  #palette-preview {
+    display: none;
+    margin-top: 14px;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid var(--gray-200);
+  }
+
+  .palette-preview-label {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--gray-400);
+    text-align: center; padding: 8px 0 10px;
+    background: var(--gray-50); border-bottom: 1px solid var(--gray-100);
+  }
+
+  /* GRAYSCALE */
+  .grayscale-panel { padding: 16px; }
+  .grayscale-intro { font-size: 12px; color: var(--gray-500); margin-bottom: 12px; line-height: 1.6; }
+
+  .grayscale-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+
+  .grayscale-col-card {
+    background: var(--gray-50); border: 1px solid var(--gray-100);
+    border-radius: var(--radius-lg); overflow: hidden;
+  }
+
+  .grayscale-col-label {
+    padding: 8px 12px; font-size: 10px; font-weight: 600;
+    letter-spacing: 0.07em; text-transform: uppercase; color: var(--gray-500);
+    border-bottom: 1px solid var(--gray-100); background: var(--white);
+  }
+
+  .grayscale-swatch-row { display: flex; padding: 12px; gap: 8px; flex-wrap: wrap; }
+  .grayscale-swatch-pair { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+  .grayscale-swatch { width: 36px; height: 36px; border-radius: 7px; border: 1px solid rgba(0,0,0,0.06); }
+  .grayscale-swatch-hex { font-size: 9px; color: var(--gray-400); font-family: monospace; }
+
+  .print-warning {
+    background: #fffbeb; border: 1px solid #fde68a;
+    border-radius: var(--radius-lg); padding: 12px 14px;
+    display: flex; gap: 8px; align-items: flex-start; margin-bottom: 10px;
+  }
+
+  .print-warning-title { font-size: 12px; font-weight: 600; color: #92400e; margin-bottom: 2px; }
+  .print-warning-desc { font-size: 11px; color: #b45309; line-height: 1.5; }
+
+  /* NEW SCAN BTN */
+  .btn-secondary-sm {
+    font-size: 12px; color: var(--gray-500);
+    background: var(--white); border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md); padding: 6px 12px;
+    cursor: pointer; font-family: var(--font-body); transition: all 0.15s;
+  }
+
+  .btn-secondary-sm:hover { color: var(--black); border-color: var(--gray-400); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="index.html">
+    <div class="logo-icon">
+      <span></span><span></span><span></span><span></span>
+    </div>
+    Visibly
+  </a>
+
+  <div class="nav-center">
+    <button class="mode-btn active" id="mode-web" onclick="setMode('web')">
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      Web / Screen
+    </button>
+    <button class="mode-btn" id="mode-print" onclick="setMode('print')">
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / CMYK
+    </button>
+  </div>
+
+  <div class="nav-right">
+    <a href="index.html" class="nav-back">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to home
+    </a>
+  </div>
+</nav>
+
+<!-- CANVAS WRAPPER -->
+<div class="canvas-wrapper">
+<!-- CANVAS -->
+<div class="canvas" style="display:contents;">
+
+  <!-- LEFT PANEL -->
+  <div class="panel-left">
+
+    <div class="panel-section">
+      <div class="panel-section-label">Upload design</div>
+
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="file-input" accept="image/*" />
+        <div class="upload-icon">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </div>
+        <h3>Drop screenshot here</h3>
+        <p><span>Click to upload</span> or drag and drop</p>
+        <p style="margin-top:3px;">PNG, JPG, WebP</p>
+      </div>
+
+      <div id="preview-container">
+        <div class="preview-header">
+          <span class="preview-filename" id="file-name">screenshot.png</span>
+          <button class="btn-ghost" style="width:auto;margin:0;padding:4px 10px;font-size:11px;" id="reset-btn">Remove</button>
+        </div>
+        <div class="preview-img-wrap">
+          <img id="preview-img" src="" alt="Preview" />
+        </div>
+      </div>
+
+      <button class="btn-primary" id="scan-btn" style="display:none;width:100%;padding:11px;font-size:13px;font-weight:500;border-radius:99px;background:var(--teal);color:white;border:none;cursor:pointer;font-family:var(--font-body);align-items:center;justify-content:center;gap:6px;">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        Run scan
+      </button>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-label">Vision type focus</div>
+      <div class="type-grid">
+        <div class="type-chip active" onclick="toggleType(this)">
+          <div class="type-chip-dot" style="background:#0D9488;"></div>
+          Deuteranopia
+        </div>
+        <div class="type-chip active" onclick="toggleType(this)">
+          <div class="type-chip-dot" style="background:#8DB347;"></div>
+          Protanopia
+        </div>
+        <div class="type-chip active" onclick="toggleType(this)">
+          <div class="type-chip-dot" style="background:#A0522D;"></div>
+          Tritanopia
+        </div>
+        <div class="type-chip active" onclick="toggleType(this)">
+          <div class="type-chip-dot" style="background:#4A7FB5;"></div>
+          Achromatopsia
+        </div>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <div class="panel-section-label">About this tool</div>
+      <p style="font-size:11px;color:var(--gray-400);line-height:1.6;">Visibly is built for colorblind designers. Upload your design to see how it reads to the majority of users — and get palette fixes that close the gap.</p>
+      <p style="font-size:11px;color:var(--gray-400);margin-top:8px;line-height:1.6;">Designing <em>for</em> colorblind users? <a href="index.html#for-teams" style="color:var(--teal);text-decoration:none;">Try this instead →</a></p>
+    </div>
+
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="panel-right" id="panel-right">
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">
+        <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
+        </svg>
+      </div>
+      <h3>Upload a design to get started</h3>
+      <p>Drop a screenshot in the panel on the left and run a scan to see how your design reads to most users.</p>
+    </div>
+
+    <!-- LOADING -->
+    <div id="loading-state" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px;">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">Analyzing your design...</p>
+      <p class="loading-sub">Mapping how your design reads to most users</p>
+    </div>
+
+    <!-- ERROR -->
+    <div id="error-state" style="display:none;background:#fff5f5;border:1px solid #fed7d7;border-radius:14px;padding:16px 20px;color:#c53030;font-size:13px;">
+      <p id="error-msg">Something went wrong. Please try again.</p>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results-section" style="display:none;">
+      <div class="results-topbar">
+        <h2>How your design reads</h2>
+        <button class="btn-secondary-sm" id="reset-btn-2">New scan</button>
+      </div>
+
+      <div class="score-grid" id="score-grid">
+        <div class="score-main">
+          <div class="score-ring">
+            <svg width="80" height="80" viewBox="0 0 80 80">
+              <circle cx="40" cy="40" r="34" fill="none" stroke="#f3f4f6" stroke-width="8"/>
+              <circle id="score-circle" cx="40" cy="40" r="34" fill="none" stroke="#0D9488" stroke-width="8"
+                stroke-linecap="round" stroke-dasharray="214" stroke-dashoffset="214"
+                style="transition: stroke-dashoffset 1s ease"/>
+            </svg>
+            <div class="score-number" id="score-num">--</div>
+          </div>
+          <div class="score-label">Clarity for most users</div>
+        </div>
+        <div class="score-breakdown" id="score-breakdown"></div>
+      </div>
+
+      <div class="tabs" id="results-tabs">
+        <button class="tab active" onclick="switchTab('issues', this)">Perceptual gaps</button>
+        <button class="tab" onclick="switchTab('suggestions', this)">Palette fixes</button>
+        <button class="tab" id="tab-grayscale-btn" onclick="switchTab('grayscale', this)">Grayscale sim</button>
+      </div>
+
+      <!-- ISSUES TAB -->
+      <div id="tab-issues">
+        <div class="issues-section">
+          <div class="issues-section-header">
+            <h3>Perceptual gaps</h3>
+            <span class="issue-count" id="issue-count">0 gaps</span>
+          </div>
+          <div id="issues-list"></div>
+        </div>
+      </div>
+
+      <!-- SUGGESTIONS TAB -->
+      <div id="tab-suggestions" style="display:none;">
+        <div class="issues-section">
+          <div class="issues-section-header">
+            <h3>Palette adjustments</h3>
+            <span class="issue-count">Closes the perceptual gap</span>
+          </div>
+          <div style="padding:16px;">
+            <p style="font-size:12px;color:var(--gray-500);margin-bottom:14px;line-height:1.6;">These palettes are adjusted so your design reads the way you intended it — for everyone. Click any palette to preview it.</p>
+            <div class="suggestions-grid" id="suggestions-list"></div>
+            <div id="palette-preview">
+              <div class="palette-preview-label" id="preview-label">Previewing palette</div>
+              <div id="mockup-render"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GRAYSCALE TAB -->
+      <div id="tab-grayscale" style="display:none;">
+        <div class="issues-section">
+          <div class="issues-section-header">
+            <h3 id="grayscale-tab-title">Grayscale simulation</h3>
+            <span class="issue-count" id="grayscale-count"></span>
+          </div>
+          <div class="grayscale-panel">
+            <p class="grayscale-intro" id="grayscale-intro">Grayscale simulation shows how your design holds up without color — useful for print, photocopied materials, and low-vision contexts.</p>
+            <div id="grayscale-warnings"></div>
+            <div class="grayscale-cols" id="grayscale-cols"></div>
+            <div id="grayscale-recs"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const fileInput = document.getElementById('file-input');
+const uploadZone = document.getElementById('upload-zone');
+const previewContainer = document.getElementById('preview-container');
+const previewImg = document.getElementById('preview-img');
+const fileNameEl = document.getElementById('file-name');
+const scanBtn = document.getElementById('scan-btn');
+const loadingState = document.getElementById('loading-state');
+const resultsSection = document.getElementById('results-section');
+const errorState = document.getElementById('error-state');
+const errorMsg = document.getElementById('error-msg');
+const emptyState = document.getElementById('empty-state');
+const panelRight = document.getElementById('panel-right');
+
+let currentImageBase64 = null;
+let currentFileType = 'image/png';
+let currentMode = 'web';
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('mode-web').classList.toggle('active', mode === 'web');
+  document.getElementById('mode-print').classList.toggle('active', mode === 'print');
+  document.getElementById('tab-grayscale-btn').textContent = mode === 'print' ? 'Grayscale + CMYK' : 'Grayscale sim';
+  document.getElementById('grayscale-intro').textContent = mode === 'print'
+    ? 'Print mode checks how your colors survive CMYK conversion and grayscale collapse — critical for brochures, packaging, and physical design.'
+    : 'Grayscale simulation shows how your design holds up without color — useful for print, photocopied materials, and low-vision contexts.';
+  if (resultsSection.style.display === 'block') resetTool();
+}
+
+function toggleType(el) { el.classList.toggle('active'); }
+
+fileInput.addEventListener('change', e => { const f = e.target.files[0]; if (f) handleFile(f); });
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) handleFile(f);
+});
+
+function handleFile(file) {
+  currentFileType = file.type;
+  fileNameEl.textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    previewImg.src = ev.target.result;
+    currentImageBase64 = ev.target.result.split(',')[1];
+    uploadZone.style.display = 'none';
+    previewContainer.style.display = 'block';
+    scanBtn.style.display = 'flex';
+    errorState.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetTool() {
+  uploadZone.style.display = 'block';
+  previewContainer.style.display = 'none';
+  scanBtn.style.display = 'none';
+  resultsSection.style.display = 'none';
+  errorState.style.display = 'none';
+  loadingState.style.display = 'none';
+  emptyState.style.display = 'flex';
+  currentImageBase64 = null;
+  fileInput.value = '';
+}
+
+document.getElementById('reset-btn').addEventListener('click', resetTool);
+document.getElementById('reset-btn-2').addEventListener('click', resetTool);
+scanBtn.addEventListener('click', runScan);
+
+async function runScan() {
+  if (!currentImageBase64) return;
+  scanBtn.style.display = 'none';
+  emptyState.style.display = 'none';
+  loadingState.style.display = 'flex';
+  errorState.style.display = 'none';
+  resultsSection.style.display = 'none';
+
+  document.querySelector('.loading-text').textContent = currentMode === 'print' ? 'Analyzing print safety...' : 'Analyzing your design...';
+  document.querySelector('.loading-sub').textContent = currentMode === 'print'
+    ? 'Checking CMYK color collision, grayscale collapse, and ink density'
+    : 'Mapping how your design reads to most users';
+
+  const webPrompt = `You are an expert design advisor helping colorblind designers understand how their work is perceived by the majority of users (people without color vision deficiency). Your job is NOT to check if the design is accessible to colorblind people — the designer IS colorblind. Instead, analyze the perceptual gap: where does this design look different to most users than it likely looks to its colorblind creator?
+
+Return ONLY a valid JSON object with no markdown, no explanation, no backticks.
+
+{
+  "score": <0-100, where 100 means design reads exactly as intended for all users>,
+  "types": [
+    {"name": "Emphasis clarity", "sub": "Does visual hierarchy land for most users?", "result": "pass|warn|fail"},
+    {"name": "Color harmony", "sub": "Do colors that feel distinct actually look distinct?", "result": "pass|warn|fail"},
+    {"name": "Status meaning", "sub": "Do semantic colors read correctly to most users?", "result": "pass|warn|fail"},
+    {"name": "Palette range", "sub": "Does the palette feel varied or monotone?", "result": "pass|warn|fail"}
+  ],
+  "issues": [
+    {
+      "severity": "high|medium|low",
+      "title": "<short empathetic title>",
+      "description": "<1-2 sentences TO the colorblind designer about what most users see vs what they likely intended>",
+      "gap": "<one sentence: what the designer sees vs what most users see>",
+      "colors": ["#hex1", "#hex2"]
+    }
+  ],
+  "suggestions": [
+    {
+      "name": "<palette name>",
+      "description": "<1 sentence on how this closes the perceptual gap>",
+      "colors": ["#hex1", "#hex2", "#hex3", "#hex4"]
+    }
+  ],
+  "grayscale": {
+    "summary": "<1-2 sentences on how design holds up without color>",
+    "warnings": [{"title": "<issue>", "description": "<1 sentence>", "colors": ["#hex1", "#hex2"]}],
+    "original_colors": ["#hex1", "#hex2", "#hex3", "#hex4"],
+    "gray_equivalents": ["#gray1", "#gray2", "#gray3", "#gray4"]
+  }
+}
+Up to 6 issues, 4 palette suggestions, real hex values from image. Return ONLY JSON.`;
+
+  const printPrompt = `You are an expert print design advisor helping colorblind designers understand how their print work is perceived by most users. Analyze the perceptual gap including CMYK color shift and grayscale collapse.
+
+Return ONLY a valid JSON object with no markdown, no explanation, no backticks.
+
+{
+  "score": <0-100>,
+  "types": [
+    {"name": "CMYK color shift", "sub": "Do colors survive ink conversion as intended?", "result": "pass|warn|fail"},
+    {"name": "Grayscale collapse", "sub": "Do distinct colors stay distinct in B&W?", "result": "pass|warn|fail"},
+    {"name": "Ink density", "sub": "Are colors too light or dark to print reliably?", "result": "pass|warn|fail"},
+    {"name": "Non-color cues", "sub": "Is meaning conveyed without hue alone?", "result": "pass|warn|fail"}
+  ],
+  "issues": [
+    {
+      "severity": "high|medium|low",
+      "title": "<short empathetic title>",
+      "description": "<1-2 sentences about the print problem and perceptual gap>",
+      "gap": "<what designer intended vs what prints for most users>",
+      "colors": ["#hex1", "#hex2"]
+    }
+  ],
+  "suggestions": [
+    {"name": "<palette name>", "description": "<1 sentence>", "colors": ["#hex1", "#hex2", "#hex3", "#hex4"]}
+  ],
+  "grayscale": {
+    "summary": "<1-2 sentences on how design holds up photocopied or in B&W>",
+    "warnings": [{"title": "<issue>", "description": "<1 sentence>", "colors": ["#hex1", "#hex2"]}],
+    "original_colors": ["#hex1", "#hex2", "#hex3", "#hex4"],
+    "gray_equivalents": ["#gray1", "#gray2", "#gray3", "#gray4"],
+    "pattern_recs": ["<specific pattern/texture/icon suggestion for a named element>"]
+  }
+}
+Up to 6 issues, 4 suggestions, real hex values. Return ONLY JSON.`;
+
+  try {
+    const response = await fetch('/api/scan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4096,
+        system: currentMode === 'print' ? printPrompt : webPrompt,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: currentFileType, data: currentImageBase64 } },
+          { type: 'text', text: currentMode === 'print'
+            ? 'Analyze this design for print and CMYK perceptual gaps. Return only the JSON.'
+            : 'Analyze this design and identify where it reads differently to most users than the colorblind designer likely intended. Return only the JSON.' }
+        ]}]
+      })
+    });
+
+    if (!response.ok) throw new Error('API error ' + response.status);
+    const data = await response.json();
+    const raw = data.content.find(b => b.type === 'text')?.text || '';
+    const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    loadingState.style.display = 'none';
+    renderResults(parsed);
+  } catch (err) {
+    loadingState.style.display = 'none';
+    errorState.style.display = 'block';
+    errorMsg.textContent = 'Analysis failed — please try again. (' + err.message + ')';
+    scanBtn.style.display = 'flex';
+    previewContainer.style.display = 'block';
+    emptyState.style.display = 'none';
+  }
+}
+
+function renderResults(data) {
+  resultsSection.style.display = 'block';
+
+  const score = Math.min(100, Math.max(0, data.score || 0));
+  document.getElementById('score-num').textContent = score;
+  const circumference = 214;
+  setTimeout(() => {
+    document.getElementById('score-circle').style.strokeDashoffset = circumference - (score / 100) * circumference;
+    document.getElementById('score-circle').style.stroke = score >= 75 ? '#0D9488' : score >= 50 ? '#f59e0b' : '#ef4444';
+  }, 100);
+
+  const breakdown = document.getElementById('score-breakdown');
+  breakdown.innerHTML = '';
+  (data.types || []).forEach(t => {
+    const cls = t.result === 'pass' ? 'badge-pass' : t.result === 'warn' ? 'badge-warn' : 'badge-fail';
+    const label = t.result === 'pass' ? 'Pass' : t.result === 'warn' ? 'Warn' : 'Fail';
+    breakdown.innerHTML += `
+      <div class="score-type-card">
+        <div>
+          <div class="score-type-name">${t.name}</div>
+          <div class="score-type-sub">${t.sub}</div>
+        </div>
+        <span class="score-type-badge ${cls}">${label}</span>
+      </div>`;
+  });
+
+  const issues = data.issues || [];
+  document.getElementById('issue-count').textContent = issues.length + ' gap' + (issues.length !== 1 ? 's' : '');
+  const issuesList = document.getElementById('issues-list');
+  issuesList.innerHTML = issues.length === 0
+    ? `<div style="padding:24px;text-align:center;color:var(--gray-500);font-size:13px;">No perceptual gaps found. Your design reads as intended.</div>`
+    : '';
+
+  issues.forEach(issue => {
+    const sevCls = issue.severity === 'high' ? 'sev-high' : issue.severity === 'medium' ? 'sev-med' : 'sev-low';
+    const sevLabel = issue.severity === 'high' ? 'Likely misread' : issue.severity === 'medium' ? 'May shift' : 'Subtle difference';
+    const colors = (issue.colors || []).slice(0, 2);
+    const swatchHtml = colors.map(c => `<div class="swatch" style="background:${c}" title="${c}"></div>`).join('<span class="swatch-arrow">→</span>');
+    issuesList.innerHTML += `
+      <div class="issue-item">
+        <div>
+          <div class="issue-severity ${sevCls}">${sevLabel}</div>
+          <div class="issue-title">${issue.title}</div>
+          <div class="issue-desc">${issue.description}</div>
+          ${issue.gap ? `<div class="issue-gap"><strong>Perceptual gap:</strong> ${issue.gap}</div>` : ''}
+        </div>
+        ${colors.length ? `<div class="color-swatches">${swatchHtml}</div>` : ''}
+      </div>`;
+  });
+
+  const sugList = document.getElementById('suggestions-list');
+  sugList.innerHTML = '';
+  (data.suggestions || []).forEach(s => {
+    const swatches = (s.colors || []).map(c => `<div class="palette-swatch" style="background:${c}" title="${c}"></div>`).join('');
+    const card = document.createElement('div');
+    card.className = 'suggestion-card';
+    card.innerHTML = `<div class="suggestion-card-title">${s.name}</div><div class="palette-row">${swatches}</div><div class="suggestion-meta">${s.description}</div>`;
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.suggestion-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      renderPalettePreview(s);
+    });
+    sugList.appendChild(card);
+  });
+
+  renderGrayscale(data.grayscale || {});
+  switchTab('issues', document.querySelector('.tab.active'));
+}
+
+function renderGrayscale(g) {
+  const warnings = g.warnings || [];
+  const origColors = g.original_colors || [];
+  const grayColors = g.gray_equivalents || [];
+  const patternRecs = g.pattern_recs || [];
+
+  document.getElementById('grayscale-count').textContent = warnings.length > 0 ? warnings.length + ' concern' + (warnings.length !== 1 ? 's' : '') : 'All clear';
+
+  const warningsEl = document.getElementById('grayscale-warnings');
+  warningsEl.innerHTML = g.summary ? `<p style="font-size:12px;color:var(--gray-600);margin-bottom:12px;line-height:1.6;">${g.summary}</p>` : '';
+  warnings.forEach(w => {
+    const cols = (w.colors || []).slice(0, 2);
+    warningsEl.innerHTML += `
+      <div class="print-warning">
+        <svg width="14" height="14" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px;">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+          <div class="print-warning-title">${w.title}</div>
+          <div class="print-warning-desc">${w.description}</div>
+          ${cols.length ? `<div style="display:flex;align-items:center;gap:5px;margin-top:6px;">${cols.map(c=>`<div style="width:16px;height:16px;border-radius:4px;background:${c};border:1px solid rgba(0,0,0,0.08);"></div>`).join('<span style="font-size:10px;color:#b45309;">→</span>')}</div>` : ''}
+        </div>
+      </div>`;
+  });
+
+  const colsEl = document.getElementById('grayscale-cols');
+  colsEl.innerHTML = '';
+  if (origColors.length > 0) {
+    colsEl.innerHTML = `
+      <div class="grayscale-col-card">
+        <div class="grayscale-col-label">Original</div>
+        <div class="grayscale-swatch-row">${origColors.map(c => `<div class="grayscale-swatch-pair"><div class="grayscale-swatch" style="background:${c};"></div><div class="grayscale-swatch-hex">${c}</div></div>`).join('')}</div>
+      </div>
+      <div class="grayscale-col-card">
+        <div class="grayscale-col-label">Grayscale</div>
+        <div class="grayscale-swatch-row">${grayColors.map((c,i) => {
+          const tooClose = grayColors.filter(g2 => Math.abs(parseInt(g2.slice(1,3),16) - parseInt(c.slice(1,3),16)) < 20).length > 1;
+          return `<div class="grayscale-swatch-pair"><div class="grayscale-swatch" style="background:${c};${tooClose?'outline:2px solid #f59e0b;':''}"></div><div class="grayscale-swatch-hex" style="${tooClose?'color:#d97706;font-weight:600;':''}">${c}</div></div>`;
+        }).join('')}</div>
+      </div>`;
+  }
+
+  const recsEl = document.getElementById('grayscale-recs');
+  recsEl.innerHTML = patternRecs.length > 0 ? `
+    <div style="margin-top:4px;">
+      <div style="font-size:10px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Non-color fallback suggestions</div>
+      ${patternRecs.map(r => `<div style="display:flex;align-items:flex-start;gap:6px;padding:8px 0;border-bottom:1px solid var(--gray-100);">
+        <svg width="12" height="12" fill="none" stroke="var(--teal)" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+        <span style="font-size:11px;color:var(--gray-600);line-height:1.5;">${r}</span>
+      </div>`).join('')}
+    </div>` : '';
+}
+
+function getLuminance(hex) {
+  const r=parseInt(hex.slice(1,3),16)/255, g=parseInt(hex.slice(3,5),16)/255, b=parseInt(hex.slice(5,7),16)/255;
+  const l = c => c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4);
+  return 0.2126*l(r) + 0.7152*l(g) + 0.0722*l(b);
+}
+
+function contrastRatio(a, b) {
+  const l1=getLuminance(a), l2=getLuminance(b);
+  return (Math.max(l1,l2)+0.05)/(Math.min(l1,l2)+0.05);
+}
+
+function bestText(bg) { return contrastRatio(bg,'#0F1117') >= contrastRatio(bg,'#ffffff') ? '#0F1117' : '#ffffff'; }
+
+function lighten(hex, amt=0.88) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return '#'+[r,g,b].map(v=>Math.round(v+(255-v)*amt).toString(16).padStart(2,'0')).join('');
+}
+
+function renderPalettePreview(s) {
+  const colors = s.colors || [];
+  const sorted = [...colors].sort((a,b) => getLuminance(a)-getLuminance(b));
+  const dark = sorted[0] || '#0F1117';
+  const light = sorted[sorted.length-1] || '#f9fafb';
+  const getSat = h => { const r=parseInt(h.slice(1,3),16)/255,g=parseInt(h.slice(3,5),16)/255,b=parseInt(h.slice(5,7),16)/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b); return mx===0?0:(mx-mn)/mx; };
+  const accent = colors.slice().sort((a,b)=>getSat(b)-getSat(a))[0] || '#0D9488';
+  const bg = getLuminance(light) > 0.5 ? light : '#f9fafb';
+  const navBg = getLuminance(light) > 0.7 ? '#ffffff' : light;
+  const accentText = bestText(accent);
+  const badgeBg = lighten(accent, 0.88);
+
+  document.getElementById('preview-label').textContent = `Previewing: ${s.name}`;
+  document.getElementById('mockup-render').innerHTML = `
+    <div style="font-family:'DM Sans',sans-serif;background:${bg};border-radius:0 0 14px 14px;overflow:hidden;">
+      <div style="background:${navBg};border-bottom:1px solid rgba(0,0,0,0.07);padding:0 24px;height:48px;display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div style="width:18px;height:18px;border-radius:3px;background:${accent};"></div>
+          <span style="font-size:13px;font-weight:600;color:${dark};letter-spacing:-0.01em;">Visibly</span>
+        </div>
+        <div style="display:flex;gap:20px;">
+          <span style="font-size:11px;color:${dark};opacity:0.5;">Features</span>
+          <span style="font-size:11px;color:${dark};opacity:0.5;">How it works</span>
+        </div>
+        <div style="background:${accent};color:${accentText};font-size:11px;font-weight:500;padding:6px 14px;border-radius:99px;">Get started →</div>
+      </div>
+      <div style="text-align:center;padding:36px 24px 28px;">
+        <div style="display:inline-flex;align-items:center;gap:5px;background:${badgeBg};color:${dark};font-size:9px;font-weight:700;letter-spacing:0.09em;text-transform:uppercase;padding:4px 10px 4px 8px;border-radius:99px;margin-bottom:16px;">
+          <div style="width:5px;height:5px;border-radius:50%;background:${accent};"></div>
+          For colorblind designers
+        </div>
+        <div style="font-family:'Lora',serif;font-size:26px;font-weight:600;line-height:1.15;color:${dark};margin-bottom:8px;letter-spacing:-0.02em;">Design confidently,<br>even with <span style="color:${accent};font-style:italic;">color blindness.</span></div>
+        <div style="font-size:12px;color:${dark};opacity:0.55;max-width:300px;margin:0 auto 20px;line-height:1.6;">Upload a screenshot and see how your design reads to the rest of the world.</div>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <div style="background:${accent};color:${accentText};font-size:11px;font-weight:500;padding:9px 18px;border-radius:99px;">Scan your design →</div>
+          <div style="background:transparent;color:${dark};font-size:11px;font-weight:500;padding:9px 18px;border-radius:99px;border:1px solid rgba(0,0,0,0.12);">See how it works</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:0 20px 24px;">
+        ${[{t:'See what others see',d:'Simulate your design across all major vision types.'},{t:'Clarity score',d:'A 0–100 score showing how well your intent translates.'},{t:'Palette fixes',d:'Safe alternatives that close the perceptual gap.'}].map((c,i)=>`
+          <div style="background:${i===0?accent:navBg};border:1px solid rgba(0,0,0,0.07);border-radius:10px;padding:14px;">
+            <div style="width:24px;height:24px;border-radius:6px;background:${i===0?'rgba(255,255,255,0.2)':badgeBg};margin-bottom:8px;"></div>
+            <div style="font-size:11px;font-weight:600;color:${i===0?accentText:dark};margin-bottom:4px;">${c.t}</div>
+            <div style="font-size:10px;color:${i===0?accentText:dark};opacity:${i===0?'0.75':'0.5'};line-height:1.5;">${c.d}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+
+  const preview = document.getElementById('palette-preview');
+  preview.style.display = 'block';
+  preview.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  document.getElementById('tab-issues').style.display = tab === 'issues' ? 'block' : 'none';
+  document.getElementById('tab-suggestions').style.display = tab === 'suggestions' ? 'block' : 'none';
+  document.getElementById('tab-grayscale').style.display = tab === 'grayscale' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>
