@@ -1713,54 +1713,72 @@ function buildSimStrip(imgSrc) {
   strip.style.display = 'block';
 }
 
-function openSimOverlay() {
-  const imgSrc = currentImageDataURL;
-
-  const grid = document.getElementById('sim-overlay-grid');
-  grid.innerHTML = '';
-
-  const toShow = [simData.find(s => s.id === 'orig'), ...simData.filter(s => s.id !== 'orig')];
-
-  toShow.forEach(s => {
-    const filterStyle = s.filter === 'none' ? '' : `filter:${s.filter};`;
-    const imgContent = imgSrc
-      ? `<img src="${imgSrc}" style="width:100%;display:block;${filterStyle}" alt="${s.name}"/>`
-      : `<div style="height:200px;background:rgba(255,255,255,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
-           <svg width="28" height="28" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
-           <span style="font-size:11px;color:rgba(255,255,255,0.25);">Upload a design to see simulation</span>
-         </div>`;
-
-    const card = document.createElement('div');
-    card.className = 'overlay-card';
-    card.innerHTML = `
-      <div class="overlay-card-header">
-        <div class="overlay-card-title">
-          <span class="overlay-card-dot" style="background:${s.dot};"></span>
-          ${s.name}
-          <span class="overlay-card-sub">— ${s.sub}</span>
-        </div>
-        <span class="overlay-card-badge" style="background:${s.badgeBg};color:${s.badgeColor};">${s.badge}</span>
-      </div>
-      ${imgContent}
-      <div class="overlay-card-note">${s.note}</div>`;
-    grid.appendChild(card);
-  });
-
-  document.getElementById('sim-overlay').style.display = 'block';
-  document.body.style.overflow = 'hidden';
-}
-
-document.getElementById('sim-see-all-btn').addEventListener('click', openSimOverlay);
-document.getElementById('sim-close-btn').addEventListener('click', closeSimOverlay);
-document.getElementById('sim-overlay').addEventListener('click', function(e) {
-  if (e.target === this) closeSimOverlay();
-});
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimOverlay(); });
-
 function closeSimOverlay() {
   document.getElementById('sim-overlay').style.display = 'none';
   document.body.style.overflow = '';
 }
+
+function openSimOverlay() {
+  const imgSrc = currentImageDataURL;
+  const overlay = document.getElementById('sim-overlay');
+
+  // Set original image
+  const origWrap = document.getElementById('sim-img-orig-wrap');
+  origWrap.innerHTML = imgSrc
+    ? `<img src="${imgSrc}" style="width:100%;display:block;" alt="Original"/>`
+    : `<div style="height:240px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-size:12px;">Upload a design to see simulation</div>`;
+
+  // Build vision type buttons
+  const btnContainer = document.getElementById('sim-type-btns');
+  btnContainer.innerHTML = '';
+  const types = simData.filter(s => s.id !== 'orig');
+  types.forEach((s, i) => {
+    const btn = document.createElement('button');
+    btn.style.cssText = `display:flex;align-items:center;gap:7px;padding:8px 16px;border-radius:99px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:rgba(255,255,255,0.6);transition:all 0.15s;white-space:nowrap;`;
+    btn.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${s.dot};display:inline-block;flex-shrink:0;"></span>${s.name}`;
+    btn.addEventListener('click', () => selectSimType(s, btn));
+    btnContainer.appendChild(btn);
+    if (i === 0) setTimeout(() => selectSimType(s, btn), 10);
+  });
+
+  overlay.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function selectSimType(s, activeBtn) {
+  const imgSrc = currentImageDataURL;
+
+  // Update button styles
+  document.querySelectorAll('#sim-type-btns button').forEach(b => {
+    b.style.background = 'rgba(255,255,255,0.07)';
+    b.style.color = 'rgba(255,255,255,0.6)';
+    b.style.borderColor = 'rgba(255,255,255,0.15)';
+  });
+  activeBtn.style.background = s.dot;
+  activeBtn.style.color = 'white';
+  activeBtn.style.borderColor = s.dot;
+
+  // Update sim panel header
+  document.getElementById('sim-active-dot').style.background = s.dot;
+  document.getElementById('sim-active-name').textContent = s.name;
+  document.getElementById('sim-active-sub').textContent = '— ' + s.sub;
+  const badge = document.getElementById('sim-active-badge');
+  badge.textContent = s.badge;
+  badge.style.background = s.badgeBg;
+  badge.style.color = s.badgeColor;
+
+  // Update insight note
+  document.getElementById('sim-insight').textContent = s.note;
+
+  // Update filtered image
+  const filterStyle = (s.filter && s.filter !== 'none') ? `filter:${s.filter};` : '';
+  document.getElementById('sim-img-filtered-wrap').innerHTML = imgSrc
+    ? `<img src="${imgSrc}" style="width:100%;display:block;${filterStyle}" alt="${s.name}"/>`
+    : `<div style="height:240px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.3);font-size:12px;">Upload a design to see simulation</div>`;
+}
+
+document.getElementById('sim-see-all-btn').addEventListener('click', openSimOverlay);
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimOverlay(); });
 </script>
 <!-- COLORBLIND SVG FILTERS -->
 <svg width="0" height="0" style="position:absolute;overflow:hidden;">
@@ -1773,16 +1791,51 @@ function closeSimOverlay() {
 </svg>
 
 <!-- FULLSCREEN SIM OVERLAY -->
-<div id="sim-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,15,14,0.94);z-index:9999;overflow-y:auto;padding:28px 24px;">
-  <div style="max-width:1060px;margin:0 auto;">
+<div id="sim-overlay" style="display:none;position:fixed;inset:0;background:rgba(8,15,14,0.94);z-index:9999;overflow-y:auto;padding:32px 24px;" onclick="if(event.target===this)closeSimOverlay()">
+  <div style="max-width:900px;margin:0 auto;">
+
+    <!-- HEADER -->
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;gap:16px;">
       <div>
-        <div style="font-family:'Lora',serif;font-size:22px;font-weight:600;color:white;margin-bottom:5px;">How others see your design</div>
-        <div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;">Clinically-derived colorblind simulation filters applied to your uploaded design. Each view shows exactly what that vision type perceives.</div>
+        <div style="font-family:'Lora',serif;font-size:20px;font-weight:600;color:white;margin-bottom:4px;">How others see your design</div>
+        <div id="sim-active-desc" style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;">Select a vision type to see how your design appears to them.</div>
       </div>
-      <button id="sim-close-btn" style="flex-shrink:0;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:99px;padding:8px 18px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.7);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;white-space:nowrap;">Close ✕</button>
+      <button onclick="closeSimOverlay()" style="flex-shrink:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:99px;padding:8px 20px;font-size:13px;font-weight:500;color:white;cursor:pointer;font-family:'DM Sans',sans-serif;">Close ✕</button>
     </div>
-    <div id="sim-overlay-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"></div>
+
+    <!-- VISION TYPE SELECTOR -->
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;" id="sim-type-btns"></div>
+
+    <!-- SPLIT VIEW: original left, simulation right -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+
+      <!-- ORIGINAL -->
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;">
+        <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:8px;">
+          <span style="width:8px;height:8px;border-radius:50%;background:#0D9488;display:inline-block;flex-shrink:0;"></span>
+          <span style="font-size:13px;font-weight:600;color:white;">Your design</span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.35);margin-left:2px;">— as you see it</span>
+          <span style="margin-left:auto;background:#CCFBF1;color:#0F766E;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;">Original</span>
+        </div>
+        <div id="sim-img-orig-wrap" style="background:#111;"></div>
+      </div>
+
+      <!-- SIMULATION -->
+      <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;">
+        <div style="padding:12px 16px;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:8px;">
+          <span id="sim-active-dot" style="width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;background:#8DB347;"></span>
+          <span id="sim-active-name" style="font-size:13px;font-weight:600;color:white;">Deuteranopia</span>
+          <span id="sim-active-sub" style="font-size:11px;color:rgba(255,255,255,0.35);margin-left:2px;">— red-green (green)</span>
+          <span id="sim-active-badge" style="margin-left:auto;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;background:#ecfccb;color:#3f6212;">8% of men</span>
+        </div>
+        <div id="sim-img-filtered-wrap" style="background:#111;"></div>
+      </div>
+
+    </div>
+
+    <!-- INSIGHT NOTE -->
+    <div id="sim-insight" style="margin-top:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 16px;font-size:12px;color:rgba(255,255,255,0.5);line-height:1.6;"></div>
+
   </div>
 </div>
 
