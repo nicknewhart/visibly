@@ -1059,8 +1059,18 @@
     </div>
 
     <!-- ERROR -->
-    <div id="error-state" style="display:none;background:#fff5f5;border:1px solid #fed7d7;border-radius:14px;padding:16px 20px;color:#c53030;font-size:13px;">
-      <p id="error-msg">Something went wrong. Please try again.</p>
+    <div id="error-state" style="display:none;">
+      <div style="background:#fff5f5;border:1px solid #fed7d7;border-radius:14px;padding:20px;display:flex;gap:14px;align-items:flex-start;">
+        <div style="width:36px;height:36px;background:#fee2e2;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" fill="none" stroke="#c53030" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:600;color:#c53030;margin-bottom:4px;" id="error-title">Analysis failed</div>
+          <div style="font-size:12px;color:#e53e3e;line-height:1.5;margin-bottom:12px;" id="error-msg">Something went wrong. Please try again.</div>
+          <div id="error-hint" style="font-size:11px;color:#742a2a;background:#fed7d7;border-radius:6px;padding:8px 10px;line-height:1.6;margin-bottom:12px;display:none;"></div>
+          <button id="error-retry-btn" style="background:#c53030;color:white;border:none;border-radius:99px;padding:7px 16px;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;">Try again</button>
+        </div>
+      </div>
     </div>
 
     <!-- RESULTS -->
@@ -1245,7 +1255,7 @@ async function runScan() {
   if (!currentImageBase64) return;
   scanBtn.style.display = 'none';
   emptyState.style.display = 'none';
-  loadingState.style.display = 'flex';
+  loadingState.style.display = 'block';
   errorState.style.display = 'none';
   resultsSection.style.display = 'none';
 
@@ -1351,10 +1361,43 @@ Up to 6 issues, 4 suggestions, real hex values. Return ONLY JSON.`;
   } catch (err) {
     loadingState.style.display = 'none';
     errorState.style.display = 'block';
-    errorMsg.textContent = 'Analysis failed — please try again. (' + err.message + ')';
-    scanBtn.style.display = 'flex';
+    scanBtn.style.display = 'block';
     previewContainer.style.display = 'block';
     emptyState.style.display = 'none';
+
+    const msg = err.message || '';
+    const titleEl = document.getElementById('error-title');
+    const msgEl = document.getElementById('error-msg');
+    const hintEl = document.getElementById('error-hint');
+
+    if (msg.includes('404')) {
+      titleEl.textContent = 'API proxy not found';
+      msgEl.textContent = 'The /api/scan endpoint returned a 404 error.';
+      hintEl.textContent = 'Make sure api/scan.js exists in your GitHub repo and Vercel has redeployed. Check your Vercel dashboard for deployment errors.';
+      hintEl.style.display = 'block';
+    } else if (msg.includes('401') || msg.includes('403')) {
+      titleEl.textContent = 'API key issue';
+      msgEl.textContent = 'Your Anthropic API key is missing or invalid.';
+      hintEl.textContent = 'Go to Vercel → Project Settings → Environment Variables and check that ANTHROPIC_API_KEY is set correctly, then redeploy.';
+      hintEl.style.display = 'block';
+    } else if (msg.includes('429')) {
+      titleEl.textContent = 'Rate limited';
+      msgEl.textContent = 'Too many requests. Please wait a moment and try again.';
+      hintEl.style.display = 'none';
+    } else if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+      titleEl.textContent = 'Connection failed';
+      msgEl.textContent = 'Could not reach the scan API. Check your internet connection.';
+      hintEl.textContent = 'If you\'re testing locally by opening the HTML file directly, the API proxy won\'t work. Deploy to Vercel first.';
+      hintEl.style.display = 'block';
+    } else if (msg.includes('JSON') || msg.includes('parse')) {
+      titleEl.textContent = 'Analysis parsing error';
+      msgEl.textContent = 'The scan completed but the response was malformed. Try scanning again.';
+      hintEl.style.display = 'none';
+    } else {
+      titleEl.textContent = 'Analysis failed';
+      msgEl.textContent = msg || 'Something went wrong. Please try again.';
+      hintEl.style.display = 'none';
+    }
   }
 }
 
@@ -1372,7 +1415,7 @@ function renderResults(data) {
   } else if (score >= 50) {
     headline = 'Some gaps to close.'; subline = "Your intent is clear — let's help it land."; scoreColor = '#f59e0b';
   } else {
-    headline = 'Needs some work.'; subline = 'Don't worry — these fixes are straightforward.'; scoreColor = '#ef4444';
+    headline = 'Needs some work.'; subline = "Don't worry — these fixes are straightforward."; scoreColor = '#ef4444';
   }
   document.getElementById('score-headline').textContent = headline;
   document.getElementById('score-subline').textContent = subline;
@@ -1564,6 +1607,10 @@ function previewDemoResults() {
   // Show sim strip with demo placeholder (no real image in preview mode)
   buildSimStrip(null);
 }
+document.getElementById('error-retry-btn').addEventListener('click', () => {
+  errorState.style.display = 'none';
+  runScan();
+});
 document.getElementById('preview-demo-btn').addEventListener('click', previewDemoResults);
 document.getElementById('mode-web').addEventListener('click', () => setMode('web'));
 document.getElementById('mode-print').addEventListener('click', () => setMode('print'));
