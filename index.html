@@ -158,13 +158,17 @@
   .hero-grid {
     position: absolute;
     inset: 0;
+    z-index: 0;
     background-image:
       linear-gradient(var(--gray-100) 1px, transparent 1px),
       linear-gradient(90deg, var(--gray-100) 1px, transparent 1px);
     background-size: 40px 40px;
     opacity: 0.5;
     mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, black 40%, transparent 100%);
+    pointer-events: none;
   }
+
+  .hero > *:not(.hero-grid) { position: relative; z-index: 1; }
 
   .hero-badge {
     display: inline-flex;
@@ -219,6 +223,46 @@
 
   .hero-actions {
     display: flex;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .btn-primary-hero {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--teal);
+    color: white;
+    font-size: 15px;
+    font-weight: 500;
+    padding: 13px 28px;
+    border-radius: 99px;
+    text-decoration: none;
+    font-family: var(--font-body);
+    transition: background 0.15s;
+  }
+
+  .btn-primary-hero:hover { background: var(--teal-dark); }
+
+  .btn-secondary-hero {
+    display: inline-flex;
+    align-items: center;
+    background: transparent;
+    color: var(--black);
+    font-size: 15px;
+    font-weight: 500;
+    padding: 13px 28px;
+    border-radius: 99px;
+    border: 1px solid var(--gray-200);
+    text-decoration: none;
+    font-family: var(--font-body);
+    transition: all 0.15s;
+  }
+
+  .btn-secondary-hero:hover { border-color: var(--gray-400); }
+    display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
@@ -227,23 +271,20 @@
   }
 
   .hero-nudge {
-    margin-bottom: 36px;
+    margin-bottom: 56px;
     position: relative;
   }
 
   .hero-nudge a {
-    font-size: 13px;
-    color: var(--gray-500);
+    font-size: 12px;
+    color: var(--gray-400);
     text-decoration: none;
     border-bottom: 1px dashed var(--gray-300);
     padding-bottom: 1px;
-    transition: color 0.2s, border-color 0.2s;
+    transition: color 0.15s;
   }
 
-  .hero-nudge a:hover {
-    color: var(--teal);
-    border-color: var(--teal);
-  }
+  .hero-nudge a:hover { color: var(--teal); border-color: var(--teal); }
 
   .hero-stats {
     display: flex;
@@ -265,7 +306,9 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
+    flex-shrink: 0;
   }
+
 
   /* TOOL SECTION */
   .tool-section {
@@ -1380,11 +1423,15 @@
   <div class="hero-grid"></div>
   <div class="hero-badge">For colorblind designers</div>
   <h1>Design confidently,<br>even with <em>color blindness.</em></h1>
-  <p>Upload a screenshot of your design and see exactly how the rest of the world sees it — with clear fixes that preserve your creative intent.</p>
-  <div class="hero-nudge">
+  <p>Upload a screenshot and see exactly how most users perceive your work — with prioritized fixes that keep your colors intact.</p>
+  <div class="hero-actions">
+    <a href="scan.html" class="btn-primary-hero">Scan your design →</a>
+    <a href="#how-it-works" class="btn-secondary-hero">See how it works</a>
+  </div>
+  <div class="hero-nudge" style="margin-bottom:64px;">
     <a href="#for-teams">Want your designs to work for colorblind users? Try this instead →</a>
   </div>
-  <div class="hero-stats">
+  <div class="hero-stats" style="margin-top:0;">
     <div class="hero-stat">
       <span class="hero-stat-dot" style="background:#0D9488"></span>
       Deuteranopia
@@ -1404,27 +1451,6 @@
   </div>
 </section>
 
-<!-- TEASER -->
-<section class="tool-section" id="tool">
-  <div style="max-width:640px;margin:0 auto;">
-    <a href="scan.html" style="display:block;text-decoration:none;">
-      <div class="teaser-drop">
-        <div style="width:52px;height:52px;background:white;border:1px solid var(--gray-200);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--teal);">
-          <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        </div>
-        <h3 style="font-size:16px;font-weight:500;color:var(--black);margin-bottom:6px;">Drop your screenshot to get started</h3>
-        <p style="font-size:14px;color:var(--gray-500);margin-bottom:20px;">Opens the full scanner — scores your design, surfaces perceptual gaps, and suggests palette fixes.</p>
-        <div style="display:inline-flex;align-items:center;gap:6px;background:var(--teal);color:white;font-size:14px;font-weight:500;padding:10px 22px;border-radius:99px;font-family:var(--font-body);">Open scanner →</div>
-        <div style="margin-top:20px;display:flex;align-items:center;justify-content:center;gap:24px;">
-          <span style="font-size:12px;color:var(--gray-400);display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#0D9488;display:inline-block;"></span>Web mode</span>
-          <span style="font-size:12px;color:var(--gray-400);display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#A0522D;display:inline-block;"></span>Print / CMYK</span>
-          <span style="font-size:12px;color:var(--gray-400);display:flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#4A7FB5;display:inline-block;"></span>Grayscale sim</span>
-        </div>
-      </div>
-    </a>
-  </div>
-</section>
-
 <hr class="section-divider" />
 <div class="section" id="features">
   <div class="section-badge">What you get</div>
@@ -1438,8 +1464,8 @@
           <circle cx="12" cy="12" r="3"/><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/>
         </svg>
       </div>
-      <div class="feature-title">See what others see</div>
-      <div class="feature-desc">Simulate how your design appears to non-colorblind users across all four major vision types — so you know exactly where your intent gets lost.</div>
+      <div class="feature-title">See through every lens</div>
+      <div class="feature-desc">Your actual uploaded design simulated across 5 colorblind vision types side by side. Deuteranopia, protanopia, tritanopia, deuteranomaly, and achromatopsia — using clinically-derived color filters.</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">
@@ -1448,37 +1474,34 @@
         </svg>
       </div>
       <div class="feature-title">Clarity score</div>
-      <div class="feature-desc">A 0–100 score shows how clearly your design communicates to the broadest possible audience, broken down by vision type.</div>
+      <div class="feature-desc">A 0–100 score with a human label — "Looking great", "Almost there", "Needs work." Broken down across emphasis, harmony, status meaning, and palette range.</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <circle cx="13.5" cy="6.5" r="2.5"/><circle cx="6.5" cy="17.5" r="2.5"/>
-          <circle cx="17.5" cy="17.5" r="2.5"/><path d="M13.5 9v3l-3.5 3M13.5 9v3l3.5 3"/>
+          <polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
         </svg>
       </div>
-      <div class="feature-title">Prioritized issue list</div>
-      <div class="feature-desc">Issues ranked by severity with the exact colors involved. High, medium, and low priority — so you know what to fix first.</div>
+      <div class="feature-title">Fix checklist</div>
+      <div class="feature-desc">Issues ranked high, medium, low — with checkboxes to track progress. Each fix shows the perceptual gap: what you see vs what most users see, with a direct hex swap you can copy straight into Figma.</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <rect x="2" y="3" width="7" height="7" rx="1"/><rect x="15" y="3" width="7" height="7" rx="1"/>
-          <rect x="2" y="14" width="7" height="7" rx="1"/><rect x="15" y="14" width="7" height="7" rx="1"/>
+          <circle cx="12" cy="12" r="10"/><path d="M8 12h8M12 8v8"/>
         </svg>
       </div>
-      <div class="feature-title">Safe color suggestions</div>
-      <div class="feature-desc">4 alternative palettes that are colorblind-safe and visually close to your original intent. Not random — intentional swaps.</div>
+      <div class="feature-title">Color fixes — same hue</div>
+      <div class="feature-desc">Better versions of the colors you already chose — not a palette replacement. If you used blue, you get a better blue. Your brand stays intact. Each fix is one copy away from Figma.</div>
     </div>
     <div class="feature-card">
       <div class="feature-icon">
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          <circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 0 20z"/>
         </svg>
       </div>
-      <div class="feature-title">Screenshot upload</div>
-      <div class="feature-desc">Drag and drop any PNG, JPG, or WebP. No account needed, no integrations, no setup. Just drop and scan.</div>
+      <div class="feature-title">Grayscale simulation</div>
+      <div class="feature-desc">See which of your colors collapse to the same gray value — critical for print, photocopied materials, and low-vision contexts. Color pairs that match in grayscale are flagged with warnings.</div>
     </div>
     <div class="feature-card" style="border-color: var(--teal-light); background: #f0fdf9;">
       <div class="feature-icon" style="background: var(--teal-light); border-color: transparent;">
@@ -1503,21 +1526,21 @@
       <p class="section-sub" style="margin: 0 auto; text-align:center;">Three steps to understand exactly how the rest of the world experiences your work.</p>
     </div>
 
-    <div class="steps-grid">
+      <div class="steps-grid">
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-title">Upload your design</div>
-        <div class="step-desc">Drop in a screenshot of anything you're working on. Your app, a client project, a side piece — anything.</div>
+        <div class="step-desc">Drop in any screenshot — your app, a client project, a side piece. PNG, JPG, or WebP. No account, no setup.</div>
       </div>
       <div class="step">
         <div class="step-num">2</div>
-        <div class="step-title">See what others see</div>
-        <div class="step-desc">Visibly simulates your design across all four major vision types, showing you exactly where your intent doesn't survive the translation.</div>
+        <div class="step-title">Get your clarity score</div>
+        <div class="step-desc">Visibly analyzes your design and scores it 0–100. You see a ranked fix checklist, a perceptual gap breakdown, and your real design simulated through 5 colorblind vision types.</div>
       </div>
       <div class="step">
         <div class="step-num">3</div>
-        <div class="step-title">Fix it with confidence</div>
-        <div class="step-desc">Get specific color swap suggestions that preserve your visual intent while making your design land clearly for everyone.</div>
+        <div class="step-title">Fix it and ship</div>
+        <div class="step-desc">Each fix shows the exact hex to swap — same hue, better contrast. Copy it straight to Figma. Tick off fixes as you go and rescan to confirm.</div>
       </div>
     </div>
   </div>
