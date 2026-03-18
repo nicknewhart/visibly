@@ -999,10 +999,7 @@
         </div>
       </div>
 
-      <button class="btn-primary" id="scan-btn" style="display:none;width:100%;padding:11px;font-size:13px;font-weight:500;border-radius:99px;background:var(--teal);color:white;border:none;cursor:pointer;font-family:var(--font-body);align-items:center;justify-content:center;gap:6px;">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
+      <button class="btn-primary" id="scan-btn" style="display:none;width:100%;padding:11px;font-size:13px;font-weight:500;border-radius:99px;background:var(--teal);color:white;border:none;cursor:pointer;font-family:var(--font-body);text-align:center;">
         Run scan
       </button>
     </div>
@@ -1222,7 +1219,7 @@ function handleFile(file) {
     currentImageBase64 = ev.target.result.split(',')[1];
     uploadZone.style.display = 'none';
     previewContainer.style.display = 'block';
-    scanBtn.style.display = 'flex';
+    scanBtn.style.display = 'block';
     errorState.style.display = 'none';
   };
   reader.readAsDataURL(file);
