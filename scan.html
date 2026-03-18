@@ -1193,6 +1193,7 @@ const emptyState = document.getElementById('empty-state');
 const panelRight = document.getElementById('panel-right');
 
 let currentImageBase64 = null;
+let currentImageDataURL = null;
 let currentFileType = 'image/png';
 let currentMode = 'web';
 
@@ -1227,6 +1228,7 @@ function handleFile(file) {
   reader.onload = ev => {
     previewImg.src = ev.target.result;
     currentImageBase64 = ev.target.result.split(',')[1];
+    currentImageDataURL = ev.target.result;
     uploadZone.style.display = 'none';
     previewContainer.style.display = 'block';
     scanBtn.style.display = 'block';
@@ -1244,6 +1246,7 @@ function resetTool() {
   loadingState.style.display = 'none';
   emptyState.style.display = 'flex';
   currentImageBase64 = null;
+  currentImageDataURL = null;
   fileInput.value = '';
 }
 
@@ -1293,13 +1296,15 @@ Return ONLY a valid JSON object with no markdown, no explanation, no backticks.
     }
   ],
   "grayscale": {
-    "summary": "<1-2 sentences on how design holds up without color>",
-    "warnings": [{"title": "<issue>", "description": "<1 sentence>", "colors": ["#hex1", "#hex2"]}],
-    "original_colors": ["#hex1", "#hex2", "#hex3", "#hex4"],
-    "gray_equivalents": ["#gray1", "#gray2", "#gray3", "#gray4"]
+    "summary": "<1-2 sentences on how the design holds up in grayscale>",
+    "warnings": [
+      {"title": "<short title>", "description": "<1 sentence>", "colors": ["#hex_original", "#hex_other"]}
+    ],
+    "original_colors": ["<pick 4 key hex colors actually visible in the design>"],
+    "gray_equivalents": ["<the grayscale/luminance equivalent hex for each above, e.g. #8a8a8a>"]
   }
 }
-Up to 6 issues, 4 palette suggestions, real hex values from image. Return ONLY JSON.`;
+Rules: Up to 6 issues. Exactly 4 palette suggestions. The grayscale section is REQUIRED — always include original_colors and gray_equivalents with real hex values sampled from the image. Return ONLY valid JSON, no markdown, no backticks.`;
 
   const printPrompt = `You are an expert print design advisor helping colorblind designers understand how their print work is perceived by most users. Analyze the perceptual gap including CMYK color shift and grayscale collapse.
 
@@ -1474,8 +1479,7 @@ function renderResults(data) {
   switchTab('fixes', document.querySelector('.tab'));
 
   // Build simulation strip with uploaded image
-  const imgSrc = currentImageBase64 ? `data:${currentFileType};base64,${currentImageBase64}` : null;
-  buildSimStrip(imgSrc);
+  buildSimStrip(currentImageDataURL);
 }
 
 function toggleFix(el) {
@@ -1500,6 +1504,57 @@ function switchTab(tab, el) {
   document.getElementById('tab-fixes').style.display = tab === 'fixes' ? 'block' : 'none';
   document.getElementById('tab-suggestions').style.display = tab === 'suggestions' ? 'block' : 'none';
   document.getElementById('tab-grayscale').style.display = tab === 'grayscale' ? 'block' : 'none';
+}
+
+function renderGrayscale(g) {
+  const intro = document.getElementById('grayscale-intro');
+  const countEl = document.getElementById('grayscale-count');
+  const warningsEl = document.getElementById('grayscale-warnings');
+  const colsEl = document.getElementById('grayscale-cols');
+  const recsEl = document.getElementById('grayscale-recs');
+
+  if (!g || (!g.warnings && !g.original_colors)) return;
+
+  if (g.summary && intro) intro.textContent = g.summary;
+
+  const warnings = g.warnings || [];
+  if (countEl) countEl.textContent = warnings.length + ' concern' + (warnings.length !== 1 ? 's' : '');
+
+  if (warningsEl) {
+    warningsEl.innerHTML = '';
+    warnings.forEach(w => {
+      const colors = (w.colors || []).slice(0, 2);
+      const swatches = colors.map(c => `<div style="width:28px;height:28px;border-radius:6px;background:${c};border:1px solid rgba(0,0,0,0.08);display:inline-block;margin-right:4px;"></div>`).join('');
+      warningsEl.innerHTML += `
+        <div class="print-warning">
+          <svg width="14" height="14" fill="none" stroke="#d97706" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <div>
+            <div class="print-warning-title">${w.title}</div>
+            <div class="print-warning-desc">${w.description}</div>
+            ${swatches ? `<div style="margin-top:8px;">${swatches}</div>` : ''}
+          </div>
+        </div>`;
+    });
+  }
+
+  if (colsEl && g.original_colors && g.gray_equivalents) {
+    const origSwatches = g.original_colors.map(c => `<div class="grayscale-swatch-pair"><div class="grayscale-swatch" style="background:${c};"></div><div class="grayscale-swatch-hex">${c}</div></div>`).join('');
+    const graySwatches = g.gray_equivalents.map((c, i) => {
+      const orig = g.original_colors[i];
+      const similar = g.gray_equivalents.some((gc, gi) => gi !== i && Math.abs(parseInt(gc.slice(1), 16) - parseInt(c.slice(1), 16)) < 0x101010);
+      return `<div class="grayscale-swatch-pair"><div class="grayscale-swatch" style="background:${c};${similar ? 'outline:2px solid #f59e0b;' : ''}"></div><div class="grayscale-swatch-hex" style="${similar ? 'color:#d97706;font-weight:600;' : ''}">${c}${similar ? ' ⚠' : ''}</div></div>`;
+    }).join('');
+    colsEl.innerHTML = `
+      <div class="grayscale-col-card"><div class="grayscale-col-label">Original colors</div><div class="grayscale-swatch-row">${origSwatches}</div></div>
+      <div class="grayscale-col-card"><div class="grayscale-col-label">Grayscale equivalents</div><div class="grayscale-swatch-row">${graySwatches}</div></div>`;
+  }
+
+  if (recsEl && g.pattern_recs) {
+    recsEl.innerHTML = '<div style="margin-top:12px;font-size:12px;font-weight:600;color:var(--black);margin-bottom:8px;">Recommendations</div>';
+    g.pattern_recs.forEach(r => {
+      recsEl.innerHTML += `<div style="font-size:12px;color:var(--gray-500);margin-bottom:6px;padding-left:12px;border-left:2px solid var(--teal-light);">• ${r}</div>`;
+    });
+  }
 }
 
 function renderPalettePreview(s) {
@@ -1639,9 +1694,9 @@ function buildSimStrip(imgSrc) {
     thumb.className = 'sim-thumb';
     thumb.title = `View as ${s.name}`;
     if (imgSrc) {
-      const filterStyle = s.filter === 'none' ? '' : `filter:${s.filter};`;
+      const filterStyle = (s.filter && s.filter !== 'none') ? `filter:${s.filter};` : '';
       thumb.innerHTML = `
-        <img src="${imgSrc}" style="${filterStyle}width:100%;height:80px;object-fit:cover;object-position:top;display:block;" alt="${s.name}"/>
+        <img src="${imgSrc}" style="width:100%;height:80px;object-fit:cover;object-position:top;display:block;${filterStyle}" alt="${s.name}"/>
         <div class="sim-thumb-label"><span class="sim-thumb-dot" style="background:${s.dot};"></span>${s.name}</div>`;
     } else {
       // Demo placeholder
@@ -1659,21 +1714,21 @@ function buildSimStrip(imgSrc) {
 }
 
 function openSimOverlay() {
-  const imgSrc = currentImageBase64
-    ? `data:${currentFileType};base64,${currentImageBase64}`
-    : null;
+  const imgSrc = currentImageDataURL;
 
   const grid = document.getElementById('sim-overlay-grid');
   grid.innerHTML = '';
 
-  // Original first, then 5 simulations
   const toShow = [simData.find(s => s.id === 'orig'), ...simData.filter(s => s.id !== 'orig')];
 
   toShow.forEach(s => {
     const filterStyle = s.filter === 'none' ? '' : `filter:${s.filter};`;
-    const imgEl = imgSrc
+    const imgContent = imgSrc
       ? `<img src="${imgSrc}" style="width:100%;display:block;${filterStyle}" alt="${s.name}"/>`
-      : `<div style="height:180px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-size:12px;color:rgba(255,255,255,0.3);">No image uploaded</div>`;
+      : `<div style="height:200px;background:rgba(255,255,255,0.04);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;">
+           <svg width="28" height="28" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+           <span style="font-size:11px;color:rgba(255,255,255,0.25);">Upload a design to see simulation</span>
+         </div>`;
 
     const card = document.createElement('div');
     card.className = 'overlay-card';
@@ -1686,7 +1741,7 @@ function openSimOverlay() {
         </div>
         <span class="overlay-card-badge" style="background:${s.badgeBg};color:${s.badgeColor};">${s.badge}</span>
       </div>
-      ${imgEl}
+      ${imgContent}
       <div class="overlay-card-note">${s.note}</div>`;
     grid.appendChild(card);
   });
@@ -1696,10 +1751,16 @@ function openSimOverlay() {
 }
 
 document.getElementById('sim-see-all-btn').addEventListener('click', openSimOverlay);
-document.getElementById('sim-close-btn').addEventListener('click', () => {
+document.getElementById('sim-close-btn').addEventListener('click', closeSimOverlay);
+document.getElementById('sim-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSimOverlay();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSimOverlay(); });
+
+function closeSimOverlay() {
   document.getElementById('sim-overlay').style.display = 'none';
   document.body.style.overflow = '';
-});
+}
 </script>
 <!-- COLORBLIND SVG FILTERS -->
 <svg width="0" height="0" style="position:absolute;overflow:hidden;">
